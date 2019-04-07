@@ -1,3 +1,7 @@
 {
-  "ServiceUrl": ":8042"
+  "ServiceUrl": ":8042",
+  "MysqlHost": "127.0.0.1:3306",
+  "MysqlDb": "realty",
+  "MysqlUser": "user",
+  "MysqlPassword": "password"
 }
