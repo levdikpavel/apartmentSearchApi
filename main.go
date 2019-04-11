@@ -15,7 +15,7 @@ func main() {
 	Manager = new(MysqlManager)
 	err := Manager.Connect()
 	if err != nil {
-		log.Fatal("DbManager connect failed.", err)
+		log.Fatal("DbManager connect failed.\n", err)
 	}
 
 	router := mux.NewRouter()
