@@ -7,11 +7,12 @@ import (
 )
 
 type Config struct {
-	ServiceUrl    string
-	MysqlHost     string
-	MysqlDb       string
-	MysqlUser     string
-	MysqlPassword string
+	ServiceUrl            string
+	MysqlHost             string
+	MysqlDb               string
+	MysqlUser             string
+	MysqlPassword         string
+	MySqlAppartmentsTable string
 }
 
 func LoadConfig() *Config {
