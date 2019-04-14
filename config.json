@@ -6,5 +6,6 @@
   "MysqlPassword": "password",
   "MySqlResidentalCompoundTable": "residental_compounds",
   "MySqlCorpusTable": "corpuses",
-  "MySqlAppartmentTable": "appartments"
+  "MySqlAppartmentTable": "appartments",
+  "MySqlAppartmentView": "appartments_view"
 }

@@ -12,12 +12,18 @@ type MysqlManager struct {
 	TableResidentalCompound mysqlTable
 	TableCorpus             mysqlTable
 	TableAppartments        mysqlTable
+	ViewAppartments         mysqlTable
 }
 
 func (m *MysqlManager) Connect() error {
 	m.TableResidentalCompound = createResidentalCompoundTable(GConfig.MysqlDb, GConfig.MySqlResidentalCompoundTable)
 	m.TableCorpus = createCorpusTable(GConfig.MysqlDb, GConfig.MySqlCorpusTable)
 	m.TableAppartments = createAppartmentTable(GConfig.MysqlDb, GConfig.MySqlAppartmentTable)
+	m.ViewAppartments = createAppartmentView(GConfig.MysqlDb, GConfig.MySqlAppartmentView,
+		m.TableResidentalCompound,
+		m.TableCorpus,
+		m.TableAppartments)
+
 	config := mysql.Config{
 		Net:                  "tcp",
 		Addr:                 GConfig.MysqlHost,
@@ -49,6 +55,10 @@ func (m *MysqlManager) Connect() error {
 		return err
 	}
 	err = checkAndCreateTable(db, m.TableAppartments)
+	if err != nil {
+		return err
+	}
+	err = checkAndCreateTable(db, m.ViewAppartments)
 	if err != nil {
 		return err
 	}

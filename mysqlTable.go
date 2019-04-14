@@ -5,12 +5,14 @@ import "fmt"
 type mysqlTable struct {
 	DbName          string
 	TableName       string
+	FullName        string
 	CreateStatement string
 }
 
 func createResidentalCompoundTable(dbName string, tableName string) mysqlTable {
-	createTableTemplate := `CREATE TABLE %v.%v (
-  residental_compound_id INT AUTO_INCREMENT,
+	fullName := fmt.Sprintf("%v.%v", dbName, tableName)
+	createTableTemplate := `CREATE TABLE %v (
+  residental_compound_id INT NOT NULL AUTO_INCREMENT,
   city VARCHAR(45),
   district VARCHAR(45),
   address VARCHAR(100),
@@ -18,48 +20,90 @@ func createResidentalCompoundTable(dbName string, tableName string) mysqlTable {
   PRIMARY KEY (residental_compound_id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;`
-	createTableStatement := fmt.Sprintf(createTableTemplate, dbName, tableName)
+	createTableStatement := fmt.Sprintf(createTableTemplate, fullName)
 	table := mysqlTable{
 		DbName:          dbName,
 		TableName:       tableName,
 		CreateStatement: createTableStatement,
+		FullName:        fullName,
 	}
 	return table
 }
 func createCorpusTable(dbName string, tableName string) mysqlTable {
-	createTableTemplate := `CREATE TABLE %v.%v (
-  corpus_id INT AUTO_INCREMENT,
+	fullName := fmt.Sprintf("%v.%v", dbName, tableName)
+	createTableTemplate := `CREATE TABLE %v (
+  corpus_id INT NOT NULL AUTO_INCREMENT,
   residental_compound_id INT,
   corpus_name VARCHAR(10),
   floors_count INT,
+  KEY residental_compound_id_key (residental_compound_id),
   PRIMARY KEY (corpus_id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;`
-	createTableStatement := fmt.Sprintf(createTableTemplate, dbName, tableName)
+	createTableStatement := fmt.Sprintf(createTableTemplate, fullName)
 	table := mysqlTable{
 		DbName:          dbName,
 		TableName:       tableName,
 		CreateStatement: createTableStatement,
+		FullName:        fullName,
 	}
 	return table
 }
 func createAppartmentTable(dbName string, tableName string) mysqlTable {
-	createTableTemplate := `CREATE TABLE %v.%v (
-  appartment_id INT AUTO_INCREMENT,
+	fullName := fmt.Sprintf("%v.%v", dbName, tableName)
+	createTableTemplate := `CREATE TABLE %v (
+  appartment_id INT NOT NULL AUTO_INCREMENT,
   corpus_id INT,
-  number INT,
   floor INT NULL,
   rooms_count INT,
   square DOUBLE,
   cost DOUBLE,
+  KEY corpus_id_key (corpus_id),
   PRIMARY KEY (appartment_id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;`
-	createTableStatement := fmt.Sprintf(createTableTemplate, dbName, tableName)
+	createTableStatement := fmt.Sprintf(createTableTemplate, fullName)
 	table := mysqlTable{
 		DbName:          dbName,
 		TableName:       tableName,
 		CreateStatement: createTableStatement,
+		FullName:        fullName,
+	}
+	return table
+}
+
+func createAppartmentView(dbName string, viewName string,
+	tableResidentalCompound mysqlTable,
+	tableCorpus mysqlTable,
+	tableAppartments mysqlTable) mysqlTable {
+	fullName := fmt.Sprintf("%v.%v", dbName, viewName)
+	createTableTemplate := `CREATE VIEW %v as
+select 
+  rc.city,
+  rc.district,
+  rc.address,
+  rc.residental_compound_name,
+
+  c.corpus_name,
+  c.floors_count,
+
+  a.appartment_id,
+  a.floor,
+  a.rooms_count,
+  a.square,
+  a.cost
+from %v rc
+join %v c on rc.residental_compound_id=c.residental_compound_id
+join %v a on c.corpus_id=a.corpus_id;`
+	createTableStatement := fmt.Sprintf(createTableTemplate, fullName,
+		tableResidentalCompound.FullName,
+		tableCorpus.FullName,
+		tableAppartments.FullName)
+	table := mysqlTable{
+		DbName:          dbName,
+		TableName:       viewName,
+		CreateStatement: createTableStatement,
+		FullName:        fullName,
 	}
 	return table
 }

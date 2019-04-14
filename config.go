@@ -15,6 +15,7 @@ type Config struct {
 	MySqlResidentalCompoundTable string
 	MySqlCorpusTable             string
 	MySqlAppartmentTable         string
+	MySqlAppartmentView          string
 }
 
 func LoadConfig() *Config {
