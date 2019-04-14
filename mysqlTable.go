@@ -49,17 +49,17 @@ DEFAULT CHARACTER SET = utf8;`
 	}
 	return table
 }
-func createAppartmentTable(dbName string, tableName string) mysqlTable {
+func createApartmentTable(dbName string, tableName string) mysqlTable {
 	fullName := fmt.Sprintf("%v.%v", dbName, tableName)
 	createTableTemplate := `CREATE TABLE %v (
-  appartment_id INT NOT NULL AUTO_INCREMENT,
+  apartment_id INT NOT NULL AUTO_INCREMENT,
   corpus_id INT,
   floor INT NULL,
   rooms_count INT,
   square DOUBLE,
   cost DOUBLE,
   KEY corpus_id_key (corpus_id),
-  PRIMARY KEY (appartment_id))
+  PRIMARY KEY (apartment_id))
 ENGINE = InnoDB
 DEFAULT CHARACTER SET = utf8;`
 	createTableStatement := fmt.Sprintf(createTableTemplate, fullName)
@@ -72,10 +72,10 @@ DEFAULT CHARACTER SET = utf8;`
 	return table
 }
 
-func createAppartmentView(dbName string, viewName string,
+func createApartmentView(dbName string, viewName string,
 	tableResidentalCompound mysqlTable,
 	tableCorpus mysqlTable,
-	tableAppartments mysqlTable) mysqlTable {
+	tableApartments mysqlTable) mysqlTable {
 	fullName := fmt.Sprintf("%v.%v", dbName, viewName)
 	createTableTemplate := `CREATE VIEW %v as
 select 
@@ -87,7 +87,7 @@ select
   c.corpus_name,
   c.floors_count,
 
-  a.appartment_id,
+  a.apartment_id,
   a.floor,
   a.rooms_count,
   a.square,
@@ -98,7 +98,7 @@ join %v a on c.corpus_id=a.corpus_id;`
 	createTableStatement := fmt.Sprintf(createTableTemplate, fullName,
 		tableResidentalCompound.FullName,
 		tableCorpus.FullName,
-		tableAppartments.FullName)
+		tableApartments.FullName)
 	table := mysqlTable{
 		DbName:          dbName,
 		TableName:       viewName,
@@ -107,3 +107,4 @@ join %v a on c.corpus_id=a.corpus_id;`
 	}
 	return table
 }
+

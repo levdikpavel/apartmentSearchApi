@@ -11,18 +11,18 @@ import (
 type MysqlManager struct {
 	TableResidentalCompound mysqlTable
 	TableCorpus             mysqlTable
-	TableAppartments        mysqlTable
-	ViewAppartments         mysqlTable
+	TableApartments         mysqlTable
+	ViewApartments          mysqlTable
 }
 
 func (m *MysqlManager) Connect() error {
 	m.TableResidentalCompound = createResidentalCompoundTable(GConfig.MysqlDb, GConfig.MySqlResidentalCompoundTable)
 	m.TableCorpus = createCorpusTable(GConfig.MysqlDb, GConfig.MySqlCorpusTable)
-	m.TableAppartments = createAppartmentTable(GConfig.MysqlDb, GConfig.MySqlAppartmentTable)
-	m.ViewAppartments = createAppartmentView(GConfig.MysqlDb, GConfig.MySqlAppartmentView,
+	m.TableApartments = createApartmentTable(GConfig.MysqlDb, GConfig.MySqlApartmentTable)
+	m.ViewApartments = createApartmentView(GConfig.MysqlDb, GConfig.MySqlApartmentView,
 		m.TableResidentalCompound,
 		m.TableCorpus,
-		m.TableAppartments)
+		m.TableApartments)
 
 	config := mysql.Config{
 		Net:                  "tcp",
@@ -54,11 +54,11 @@ func (m *MysqlManager) Connect() error {
 	if err != nil {
 		return err
 	}
-	err = checkAndCreateTable(db, m.TableAppartments)
+	err = checkAndCreateTable(db, m.TableApartments)
 	if err != nil {
 		return err
 	}
-	err = checkAndCreateTable(db, m.ViewAppartments)
+	err = checkAndCreateTable(db, m.ViewApartments)
 	if err != nil {
 		return err
 	}
@@ -127,3 +127,4 @@ func createTable(db *sql.DB, table mysqlTable) error {
 	log.Printf("Table '%v' is created", table.TableName)
 	return nil
 }
+

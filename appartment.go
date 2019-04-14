@@ -1,6 +1,6 @@
 package main
 
-type Appartment struct {
+type Apartment struct {
 	City                   string `json:"city"`
 	District               string `json:"district"`
 	Address                string `json:"address"`

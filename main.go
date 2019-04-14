@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
@@ -22,7 +24,7 @@ func main() {
 	router.HandleFunc("/search", search)
 	router.HandleFunc("/add", add)
 
-	log.Println("Appartment Api Service started at", GConfig.ServiceUrl)
+	log.Println("Apartment Api Service started at", GConfig.ServiceUrl)
 	err = http.ListenAndServe(GConfig.ServiceUrl, router)
 	if err != nil {
 		log.Println(err)
@@ -34,8 +36,29 @@ func search(w http.ResponseWriter, request *http.Request) {
 }
 
 func add(w http.ResponseWriter, request *http.Request) {
-	data, _ := ioutil.ReadAll(request.Body)
+	data, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error reading body"))
+		return
+	}
+	req, err := parseRequest(data)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	fmt.Print(req)
 
 	w.WriteHeader(200)
 	w.Write(data)
+}
+
+func parseRequest(data []byte) (Apartment, error) {
+	var req Apartment
+	err := json.Unmarshal(data, &req)
+	if err != nil {
+		log.Printf("Error while parsing request. %v", err)
+	}
+	return req, err
 }
