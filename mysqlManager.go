@@ -2,10 +2,12 @@ package main
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"github.com/go-sql-driver/mysql"
 	_ "github.com/go-sql-driver/mysql"
 	"log"
+	"strings"
 )
 
 type MysqlManager struct {
@@ -13,6 +15,7 @@ type MysqlManager struct {
 	TableCorpus             mysqlTable
 	TableApartments         mysqlTable
 	ViewApartments          mysqlTable
+	DB                      *sql.DB
 }
 
 func (m *MysqlManager) Connect() error {
@@ -62,6 +65,7 @@ func (m *MysqlManager) Connect() error {
 	if err != nil {
 		return err
 	}
+	m.DB = db
 	return nil
 }
 
@@ -128,3 +132,81 @@ func createTable(db *sql.DB, table mysqlTable) error {
 	return nil
 }
 
+func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) ([]Apartment, error) {
+	var whereConditions []string
+	if req.City != "" {
+		condition := fmt.Sprintf("city like '%%%v%%'", req.City)
+		whereConditions = append(whereConditions, condition)
+	}
+	if req.District != "" {
+		condition := fmt.Sprintf("district like '%%%v%%'", req.District)
+		whereConditions = append(whereConditions, condition)
+	}
+	if req.Address != "" {
+		condition := fmt.Sprintf("address like '%%%v%%'", req.Address)
+		whereConditions = append(whereConditions, condition)
+	}
+	if req.CorpusName != "" {
+		condition := fmt.Sprintf("corpus_name like '%%%v%%'", req.CorpusName)
+		whereConditions = append(whereConditions, condition)
+	}
+	appendNumberWhereConditions(req.FloorsCountRange, "floors_count", &whereConditions)
+	appendNumberWhereConditions(req.FloorRange, "floor", &whereConditions)
+	appendNumberWhereConditions(req.RoomsCountRange, "rooms_count", &whereConditions)
+	appendNumberWhereConditions(req.SquareRange, "square", &whereConditions)
+	appendNumberWhereConditions(req.CostRange, "cost", &whereConditions)
+
+	if len(whereConditions) == 0 {
+		return nil, errors.New("Wrong or empty parameters")
+	}
+	whereClause := strings.Join(whereConditions, " and ")
+
+	searchStatement := fmt.Sprintf(`select 
+city, 
+district, 
+address, 
+residental_compound_name, 
+corpus_name, 
+floors_count, 
+floor, 
+rooms_count, 
+square, 
+cost
+from %v where %v;`, m.ViewApartments.FullName, whereClause)
+
+
+	resultsSql, err := m.DB.Query(searchStatement)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Apartment
+	for resultsSql.Next() {
+		var apartment Apartment
+		err = resultsSql.Scan(
+			&apartment.City,
+			&apartment.District,
+			&apartment.Address,
+			&apartment.ResidentalCompoundName,
+			&apartment.CorpusName,
+			&apartment.FloorsCount,
+			&apartment.Floor,
+			&apartment.RoomsCount,
+			&apartment.Square,
+			&apartment.Cost)
+		if err != nil {
+			errText := fmt.Sprintf("Error while parsing next item from DB. %v", err)
+			return nil, errors.New(errText)
+		}
+		results = append(results, apartment)
+	}
+	return results, nil
+}
+
+func appendNumberWhereConditions(p NumberSearchParameters, columnName string, conditions *[]string) {
+	condition, err := p.getWhereCondition(columnName)
+	if err != nil {
+		return
+	}
+	*conditions = append(*conditions, condition)
+}

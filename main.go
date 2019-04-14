@@ -45,10 +45,16 @@ func search(w http.ResponseWriter, request *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	fmt.Print(req)
+
+	result, err := Manager.searchApartments(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
 	w.WriteHeader(200)
-	w.Write(data)
+	json.NewEncoder(w).Encode(result)
 }
 
 func add(w http.ResponseWriter, request *http.Request) {
