@@ -9,9 +9,15 @@ import (
 )
 
 type MysqlManager struct {
+	TableResidentalCompound mysqlTable
+	TableCorpus             mysqlTable
+	TableAppartments        mysqlTable
 }
 
 func (m *MysqlManager) Connect() error {
+	m.TableResidentalCompound = createResidentalCompoundTable(GConfig.MysqlDb, GConfig.MySqlResidentalCompoundTable)
+	m.TableCorpus = createCorpusTable(GConfig.MysqlDb, GConfig.MySqlCorpusTable)
+	m.TableAppartments = createAppartmentTable(GConfig.MysqlDb, GConfig.MySqlAppartmentTable)
 	config := mysql.Config{
 		Net:                  "tcp",
 		Addr:                 GConfig.MysqlHost,
@@ -34,7 +40,15 @@ func (m *MysqlManager) Connect() error {
 	if err != nil {
 		return err
 	}
-	err = checkAndCreateTable(db, GConfig.MySqlAppartmentsTable)
+	err = checkAndCreateTable(db, m.TableResidentalCompound)
+	if err != nil {
+		return err
+	}
+	err = checkAndCreateTable(db, m.TableCorpus)
+	if err != nil {
+		return err
+	}
+	err = checkAndCreateTable(db, m.TableAppartments)
 	if err != nil {
 		return err
 	}
@@ -56,28 +70,28 @@ func createDatabase(conn *sql.DB, dbName string) error {
 	return nil
 }
 
-func checkAndCreateTable(db *sql.DB, tableName string) error {
+func checkAndCreateTable(db *sql.DB, table mysqlTable) error {
 	// Check if table exists
-	err := checkTable(db, tableName)
+	err := checkTable(db, table)
 	if err != nil {
 		// Create if not exist
-		log.Printf("Table '%v' is missing. Create table...", tableName)
-		err = createTable(db,tableName)
+		log.Printf("Table '%v' is missing. Create table...", table.TableName)
+		err = createTable(db,table)
 		if err != nil {
 			return err
 		}
 	}
 	// Check if table exist now
-	err = checkTable(db, tableName)
+	err = checkTable(db, table)
 	if err != nil {
 		return err
 	}
-	log.Printf("Table '%v' exists", tableName)
+	log.Printf("Table '%v' exists", table.TableName)
 	return nil
 }
 
-func checkTable(db *sql.DB, tableName string) error {
-	query := fmt.Sprintf(`SELECT 'something' FROM %v LIMIT 1;`, tableName)
+func checkTable(db *sql.DB, table mysqlTable) error {
+	query := fmt.Sprintf(`SELECT 'something' FROM %v.%v LIMIT 1;`, table.DbName, table.TableName)
 	results, err := db.Query(query)
 	if err != nil {
 		return err
@@ -95,28 +109,11 @@ func checkTable(db *sql.DB, tableName string) error {
 	return nil
 }
 
-func createTable(db *sql.DB, tableName string) error {
-	createTableStatement := fmt.Sprintf(
-`CREATE TABLE realty.%v (
-  id INT AUTO_INCREMENT,
-  city VARCHAR(45) NULL,
-  district VARCHAR(45) NULL,
-  address VARCHAR(100) NULL,
-  residental_compound VARCHAR(45) NULL,
-  corpus VARCHAR(10) NULL,
-  floors_count INT NULL,
-  floor INT NULL,
-  rooms_count INT NULL,
-  square DOUBLE NULL,
-  cost DOUBLE NULL,
-  PRIMARY KEY (id))
-ENGINE = InnoDB
-DEFAULT CHARACTER SET = utf8;
-`, tableName)
-	_, err := db.Exec(createTableStatement)
+func createTable(db *sql.DB, table mysqlTable) error {
+	_, err := db.Exec(table.CreateStatement)
 	if err != nil {
 		return err
 	}
-	log.Printf("Table '%v' is created", tableName)
+	log.Printf("Table '%v' is created", table.TableName)
 	return nil
 }
