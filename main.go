@@ -32,17 +32,14 @@ func main() {
 }
 
 func search(w http.ResponseWriter, request *http.Request) {
-
-}
-
-func add(w http.ResponseWriter, request *http.Request) {
 	data, err := ioutil.ReadAll(request.Body)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Error reading body"))
 		return
 	}
-	req, err := parseRequest(data)
+	var req ApartmentSearchRequest
+	err = parseRequest(data, &req)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte(err.Error()))
@@ -54,11 +51,30 @@ func add(w http.ResponseWriter, request *http.Request) {
 	w.Write(data)
 }
 
-func parseRequest(data []byte) (Apartment, error) {
+func add(w http.ResponseWriter, request *http.Request) {
+	data, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error reading body"))
+		return
+	}
 	var req Apartment
-	err := json.Unmarshal(data, &req)
+	err = parseRequest(data, &req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	fmt.Print(req)
+
+	w.WriteHeader(200)
+	w.Write(data)
+}
+
+func parseRequest(data []byte, req interface{}) error {
+	err := json.Unmarshal(data, req)
 	if err != nil {
 		log.Printf("Error while parsing request. %v", err)
 	}
-	return req, err
+	return err
 }
