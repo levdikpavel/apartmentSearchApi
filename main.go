@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
@@ -22,7 +23,7 @@ func main() {
 	router.HandleFunc("/search", search)
 	router.HandleFunc("/add", add)
 
-	log.Println("Appartment Api Service started at", GConfig.ServiceUrl)
+	log.Println("Apartment Api Service started at", GConfig.ServiceUrl)
 	err = http.ListenAndServe(GConfig.ServiceUrl, router)
 	if err != nil {
 		log.Println(err)
@@ -30,12 +31,64 @@ func main() {
 }
 
 func search(w http.ResponseWriter, request *http.Request) {
+	data, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error reading body"))
+		return
+	}
+	var req ApartmentSearchRequest
+	err = parseRequest(data, &req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
+	result, err := Manager.searchApartments(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+
+	w.WriteHeader(200)
+	json.NewEncoder(w).Encode(result)
 }
 
 func add(w http.ResponseWriter, request *http.Request) {
-	data, _ := ioutil.ReadAll(request.Body)
+	data, err := ioutil.ReadAll(request.Body)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Error reading body"))
+		return
+	}
+	var req Apartment
+	err = parseRequest(data, &req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
+	if req.CorpusName == "" {
+		req.CorpusName = "default"
+	}
+
+	result, err := Manager.addApartment(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
 	w.WriteHeader(200)
-	w.Write(data)
+	json.NewEncoder(w).Encode(result)
+}
+
+func parseRequest(data []byte, req interface{}) error {
+	err := json.Unmarshal(data, req)
+	if err != nil {
+		log.Printf("Error while parsing request. %v", err)
+	}
+	return err
 }

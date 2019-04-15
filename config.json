@@ -4,5 +4,8 @@
   "MysqlDb": "realty",
   "MysqlUser": "user",
   "MysqlPassword": "password",
-  "MySqlAppartmentsTable": "appartments"
+  "MySqlResidentalCompoundTable": "residental_compounds",
+  "MySqlCorpusTable": "corpuses",
+  "MySqlApartmentTable": "apartments",
+  "MySqlApartmentView": "apartments_view"
 }
