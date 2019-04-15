@@ -132,7 +132,8 @@ func createTable(db *sql.DB, table mysqlTable) error {
 	return nil
 }
 
-func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) ([]Apartment, error) {
+func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) (AparmentsApiResponse, error) {
+	var result AparmentsApiResponse
 	var whereConditions []string
 	if req.City != "" {
 		condition := fmt.Sprintf("city like '%%%v%%'", req.City)
@@ -157,10 +158,26 @@ func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) ([]Apartment,
 	appendNumberWhereConditions(req.CostRange, "cost", &whereConditions)
 
 	if len(whereConditions) == 0 {
-		return nil, errors.New("Wrong or empty parameters")
+		return result, errors.New("Wrong or empty parameters")
 	}
 	whereClause := strings.Join(whereConditions, " and ")
 
+	countStatement := fmt.Sprintf("select count(1) as count from %v where %v;", m.ViewApartments.FullName, whereClause)
+	var countStruct CountStruct
+	err := m.DB.QueryRow(countStatement).Scan(&countStruct.Count)
+	if err != nil {
+		return result, err
+	}
+	result.Count = countStruct.Count
+
+	var limitClose string
+	if req.Limit > 0 {
+		limitClose = fmt.Sprintf("limit %v offset %v", req.Limit, req.Offset)
+	}
+	var orderByClose string
+	if req.OrderBy != "" {
+		orderByClose = fmt.Sprintf("order by %v", req.OrderBy)
+	}
 	searchStatement := fmt.Sprintf(`select 
 city, 
 district, 
@@ -172,12 +189,12 @@ floor,
 rooms_count, 
 square, 
 cost
-from %v where %v;`, m.ViewApartments.FullName, whereClause)
+from %v where %v %v %v;`, m.ViewApartments.FullName, whereClause, orderByClose, limitClose)
 
 
 	resultsSql, err := m.DB.Query(searchStatement)
 	if err != nil {
-		return nil, err
+		return result, err
 	}
 
 	var results []Apartment
@@ -196,11 +213,12 @@ from %v where %v;`, m.ViewApartments.FullName, whereClause)
 			&apartment.Cost)
 		if err != nil {
 			errText := fmt.Sprintf("Error while parsing next item from DB. %v", err)
-			return nil, errors.New(errText)
+			return result, errors.New(errText)
 		}
 		results = append(results, apartment)
 	}
-	return results, nil
+	result.Results = results
+	return result, nil
 }
 
 func appendNumberWhereConditions(p NumberSearchParameters, columnName string, conditions *[]string) {

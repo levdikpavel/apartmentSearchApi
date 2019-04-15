@@ -34,6 +34,10 @@ type ApartmentSearchRequest struct {
 	RoomsCountRange NumberSearchParameters `json:"rooms_count_range"`
 	SquareRange     NumberSearchParameters `json:"square_range"`
 	CostRange       NumberSearchParameters `json:"cost_range"`
+
+	Offset  int    `json:"offset"`
+	Limit   int    `json:"limit"`
+	OrderBy string `json:"order_by"`
 }
 
 // Struct for searching by number parameters
@@ -71,4 +75,14 @@ func (p NumberSearchParameters) getWhereCondition (columnName string) (string, e
 	}
 	errText := fmt.Sprintf("Wrong or empty conditions for number field %v", columnName)
 	return "", errors.New(errText)
+}
+
+type CountStruct struct {
+	Count int `json:"count"`
+}
+
+type AparmentsApiResponse struct {
+	Results []Apartment
+	Count int
+
 }
