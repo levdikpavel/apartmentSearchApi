@@ -82,7 +82,6 @@ type CountStruct struct {
 }
 
 type AparmentsApiResponse struct {
-	Results []Apartment
-	Count int
-
+	Results []Apartment `json:"results,omitempty"`
+	Count   int         `json:"count,omitempty"`
 }
