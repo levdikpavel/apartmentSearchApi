@@ -7,18 +7,22 @@ import (
 )
 
 type Apartment struct {
+	ResidentalCompoundId   int    `json:"residental_compound_id,omitempty"`
 	City                   string `json:"city"`
 	District               string `json:"district"`
 	Address                string `json:"address"`
 	ResidentalCompoundName string `json:"residental_compound_name"`
 
+	CorpusId    int    `json:"corpus_id,omitempty"`
 	CorpusName  string `json:"corpus_name"`
 	FloorsCount int    `json:"floors_count"`
 
-	Floor      int     `json:"floor"`
-	RoomsCount int     `json:"rooms_count"`
-	Square     float64 `json:"square"`
-	Cost       float64 `json:"cost"`
+	ApartmentId   int     `json:"apartment_id,omitempty"`
+	ApartmentName string  `json:"apartment_name"`
+	Floor         int     `json:"floor"`
+	RoomsCount    int     `json:"rooms_count"`
+	Square        float64 `json:"square"`
+	Cost          float64 `json:"cost"`
 }
 
 type ApartmentSearchRequest struct {
@@ -45,9 +49,9 @@ type ApartmentSearchRequest struct {
 // Value between Min and Max (if greater than 0)
 // Or value is one of CustomVariants (if contains elements)
 type NumberSearchParameters struct {
-	Min            float64 `json:"min"`
-	Max            float64 `json:"max"`
-	CustomVariants []string   `json:"custom_variants"`
+	Min            float64  `json:"min"`
+	Max            float64  `json:"max"`
+	CustomVariants []string `json:"custom_variants"`
 }
 // Priority 1 if Min or Max greater then 0
 // Priority 2 if Min or Max are 0 and CustomVariants contains elements
@@ -82,6 +86,7 @@ type CountStruct struct {
 }
 
 type AparmentsApiResponse struct {
-	Results []Apartment `json:"results,omitempty"`
-	Count   int         `json:"count,omitempty"`
+	ApartmentId int         `json:"apartment_id,omitempty"`
+	Results     []Apartment `json:"results,omitempty"`
+	Count       int         `json:"count,omitempty"`
 }

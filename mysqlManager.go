@@ -132,6 +132,176 @@ func createTable(db *sql.DB, table mysqlTable) error {
 	return nil
 }
 
+func (m *MysqlManager) insertResidentalCompoundIfMissing (req Apartment) (int,error) {
+	var whereConditions []string
+	if req.City != "" {
+		condition := fmt.Sprintf("city='%v'", req.City)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'city' is empty")
+	}
+	if req.District != "" {
+		condition := fmt.Sprintf("district='%v'", req.District)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'district' is empty")
+	}
+	if req.Address != "" {
+		condition := fmt.Sprintf("address='%v'", req.Address)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'address' is empty")
+	}
+	if req.ResidentalCompoundName != "" {
+		condition := fmt.Sprintf("residental_compound_name='%v'", req.ResidentalCompoundName)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'residental_compound_name' is empty")
+	}
+	whereClause := strings.Join(whereConditions, " and ")
+	countResidentalCompoundStatement := fmt.Sprintf("select count(1) as count from %v where %v;", m.TableResidentalCompound.FullName, whereClause)
+	count, err := m.getMysqlCount(countResidentalCompoundStatement)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		insertStatement := fmt.Sprintf("insert into %v (city,district,address,residental_compound_name) VALUES ('%v','%v','%v','%v')",
+			m.TableResidentalCompound.FullName, req.City, req.District, req.Address, req.ResidentalCompoundName)
+		insert, err := m.DB.Query(insertStatement)
+		if err != nil {
+			return 0, err
+		}
+		defer insert.Close()
+	}
+	selectStatement := fmt.Sprintf("select residental_compound_id from %v where %v;", m.TableResidentalCompound.FullName, whereClause)
+	var apartment Apartment
+	err = m.DB.QueryRow(selectStatement).Scan(&apartment.ResidentalCompoundId)
+	if err != nil {
+		return 0, err
+	}
+
+	return apartment.ResidentalCompoundId, nil
+}
+func (m *MysqlManager) insertCorpusIfMissing (req Apartment) (int, error) {
+	var whereConditions []string
+	if req.ResidentalCompoundId != 0 {
+		condition := fmt.Sprintf("residental_compound_id=%v", req.ResidentalCompoundId)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'residental_compound_id' is zero")
+	}
+	if req.CorpusName != "" {
+		condition := fmt.Sprintf("corpus_name='%v'", req.CorpusName)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'corpus_name' is empty")
+	}
+	whereClause := strings.Join(whereConditions, " and ")
+	countCorpuses := fmt.Sprintf("select count(1) as count from %v where %v;", m.TableCorpus.FullName, whereClause)
+	count, err := m.getMysqlCount(countCorpuses)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		insertStatement := fmt.Sprintf("insert into %v (residental_compound_id,corpus_name,floors_count) VALUES (%v,'%v',%v)",
+			m.TableCorpus.FullName, req.ResidentalCompoundId, req.CorpusName, req.FloorsCount)
+		insert, err := m.DB.Query(insertStatement)
+		if err != nil {
+			return 0, err
+		}
+		defer insert.Close()
+	}
+	selectStatement := fmt.Sprintf("select corpus_id from %v where %v;", m.TableCorpus.FullName, whereClause)
+	var apartment Apartment
+	err = m.DB.QueryRow(selectStatement).Scan(&apartment.CorpusId)
+	if err != nil {
+		return 0, err
+	}
+	return apartment.CorpusId, nil
+}
+func (m *MysqlManager) insertApartmentIfMissing (req Apartment) (int, error) {
+	var whereConditions []string
+	if req.CorpusId != 0 {
+		condition := fmt.Sprintf("corpus_id=%v", req.CorpusId)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'corpus_id' is zero")
+	}
+	if req.ApartmentName != "" {
+		condition := fmt.Sprintf("apartment_name='%v'", req.ApartmentName)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'apartment_name' is empty")
+	}
+	if req.Floor != 0 {
+		condition := fmt.Sprintf("floor=%v", req.Floor)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'floor' is zero")
+	}
+	if req.RoomsCount != 0 {
+		condition := fmt.Sprintf("rooms_count=%v", req.RoomsCount)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'rooms_count' is zero")
+	}
+	if req.Square != 0 {
+		condition := fmt.Sprintf("square=%v", req.Square)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'square' is zero")
+	}
+	if req.Cost != 0 {
+		condition := fmt.Sprintf("cost=%v", req.Cost)
+		whereConditions = append(whereConditions, condition)
+	} else {
+		return 0, errors.New("Request field 'cost' is zero")
+	}
+	whereClause := strings.Join(whereConditions, " and ")
+	countCorpuses := fmt.Sprintf("select count(1) as count from %v where %v;", m.TableApartments.FullName, whereClause)
+	count, err := m.getMysqlCount(countCorpuses)
+	if err != nil {
+		return 0, err
+	}
+	if count == 0 {
+		insertStatement := fmt.Sprintf("insert into %v (corpus_id,apartment_name,floor,rooms_count,square,cost) VALUES (%v,'%v',%v,%v,%v,%v)",
+			m.TableApartments.FullName, req.CorpusId, req.ApartmentName, req.Floor, req.RoomsCount, req.Square, req.Cost)
+		insert, err := m.DB.Query(insertStatement)
+		if err != nil {
+			return 0, err
+		}
+		defer insert.Close()
+	}
+	selectStatement := fmt.Sprintf("select apartment_id from %v where %v;", m.TableApartments.FullName, whereClause)
+	var apartment Apartment
+	err = m.DB.QueryRow(selectStatement).Scan(&apartment.ApartmentId)
+	if err != nil {
+		return 0, err
+	}
+	return apartment.ApartmentId, nil
+}
+func (m *MysqlManager) addApartment(req Apartment) (AparmentsApiResponse, error) {
+	var result AparmentsApiResponse
+	residentalCompoundId,err := m.insertResidentalCompoundIfMissing(req)
+	if err != nil {
+		return result, err
+	}
+	req.ResidentalCompoundId = residentalCompoundId
+
+	corpusId,err := m.insertCorpusIfMissing(req)
+	if err != nil {
+		return result, err
+	}
+	req.CorpusId = corpusId
+
+	apartmentId,err := m.insertApartmentIfMissing(req)
+	if err != nil {
+		return result, err
+	}
+	result.ApartmentId = apartmentId
+
+	return result, nil
+}
 func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) (AparmentsApiResponse, error) {
 	var result AparmentsApiResponse
 	var whereConditions []string
@@ -145,6 +315,10 @@ func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) (AparmentsApi
 	}
 	if req.Address != "" {
 		condition := fmt.Sprintf("address like '%%%v%%'", req.Address)
+		whereConditions = append(whereConditions, condition)
+	}
+	if req.ResidentalCompoundName != "" {
+		condition := fmt.Sprintf("residental_compound_name like '%%%v%%'", req.ResidentalCompoundName)
 		whereConditions = append(whereConditions, condition)
 	}
 	if req.CorpusName != "" {
@@ -163,20 +337,19 @@ func (m *MysqlManager)searchApartments(req ApartmentSearchRequest) (AparmentsApi
 	whereClause := strings.Join(whereConditions, " and ")
 
 	countStatement := fmt.Sprintf("select count(1) as count from %v where %v;", m.ViewApartments.FullName, whereClause)
-	var countStruct CountStruct
-	err := m.DB.QueryRow(countStatement).Scan(&countStruct.Count)
+	rowsCount, err := m.getMysqlCount(countStatement)
 	if err != nil {
 		return result, err
 	}
-	result.Count = countStruct.Count
+	result.Count = rowsCount
 
-	var limitClose string
+	var limitClause string
 	if req.Limit > 0 {
-		limitClose = fmt.Sprintf("limit %v offset %v", req.Limit, req.Offset)
+		limitClause = fmt.Sprintf("limit %v offset %v", req.Limit, req.Offset)
 	}
-	var orderByClose string
+	var orderByClause string
 	if req.OrderBy != "" {
-		orderByClose = fmt.Sprintf("order by %v", req.OrderBy)
+		orderByClause = fmt.Sprintf("order by %v", req.OrderBy)
 	}
 	searchStatement := fmt.Sprintf(`select 
 city, 
@@ -189,7 +362,7 @@ floor,
 rooms_count, 
 square, 
 cost
-from %v where %v %v %v;`, m.ViewApartments.FullName, whereClause, orderByClose, limitClose)
+from %v where %v %v %v;`, m.ViewApartments.FullName, whereClause, orderByClause, limitClause)
 
 
 	resultsSql, err := m.DB.Query(searchStatement)
@@ -215,6 +388,9 @@ from %v where %v %v %v;`, m.ViewApartments.FullName, whereClause, orderByClose, 
 			errText := fmt.Sprintf("Error while parsing next item from DB. %v", err)
 			return result, errors.New(errText)
 		}
+		if apartment.CorpusName == "default" {
+			apartment.CorpusName = ""
+		}
 		results = append(results, apartment)
 	}
 	result.Results = results
@@ -227,4 +403,13 @@ func appendNumberWhereConditions(p NumberSearchParameters, columnName string, co
 		return
 	}
 	*conditions = append(*conditions, condition)
+}
+
+func (m *MysqlManager) getMysqlCount(countStatement string) (int, error) {
+	var countStruct CountStruct
+	err := m.DB.QueryRow(countStatement).Scan(&countStruct.Count)
+	if err != nil {
+		return 0, err
+	}
+	return countStruct.Count, nil
 }

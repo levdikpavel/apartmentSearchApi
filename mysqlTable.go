@@ -54,6 +54,7 @@ func createApartmentTable(dbName string, tableName string) mysqlTable {
 	createTableTemplate := `CREATE TABLE %v (
   apartment_id INT NOT NULL AUTO_INCREMENT,
   corpus_id INT,
+  apartment_name VARCHAR(20),
   floor INT NULL,
   rooms_count INT,
   square DOUBLE,

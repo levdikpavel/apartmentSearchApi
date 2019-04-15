@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/gorilla/mux"
 	"io/ioutil"
 	"log"
@@ -71,10 +70,19 @@ func add(w http.ResponseWriter, request *http.Request) {
 		w.Write([]byte(err.Error()))
 		return
 	}
-	fmt.Print(req)
+	if req.CorpusName == "" {
+		req.CorpusName = "default"
+	}
+
+	result, err := Manager.addApartment(req)
+	if err != nil {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte(err.Error()))
+		return
+	}
 
 	w.WriteHeader(200)
-	w.Write(data)
+	json.NewEncoder(w).Encode(result)
 }
 
 func parseRequest(data []byte, req interface{}) error {
